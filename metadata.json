@@ -1,0 +1,6 @@
+{
+  "name": "캐릭터 일심동체 게임",
+  "description": "다양한 매력과 개성을 가진 캐릭터를 주제로 친구들과 동시에 외치는 1,000개의 심플한 일심동체 텔레파시 질문 생성기",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
