@@ -3,12 +3,32 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
 
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
+  const isProd = mode === 'production';
   return {
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
+      },
+    },
+    esbuild: {
+      // Strip console logs and debuggers in production to prevent data leakage
+      drop: isProd ? ['console', 'debugger'] : [],
+      legalComments: 'none',
+    },
+    build: {
+      // Hide all source maps to prevent reverse-engineering of TypeScript source
+      sourcemap: false,
+      minify: 'esbuild',
+      cssMinify: true,
+      rollupOptions: {
+        output: {
+          // Scramble chunk names with content hashes
+          entryFileNames: 'assets/[hash].js',
+          chunkFileNames: 'assets/[hash].js',
+          assetFileNames: 'assets/[hash].[ext]',
+        },
       },
     },
     server: {

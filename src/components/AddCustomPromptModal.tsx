@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Plus, AlertCircle } from 'lucide-react';
 import { PromptItem, CATEGORIES } from '../data/prompts';
+import { sanitizeText } from '../utils/security';
 
 interface AddCustomPromptModalProps {
   isOpen: boolean;
@@ -22,22 +23,24 @@ export const AddCustomPromptModal: React.FC<AddCustomPromptModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmed = text.trim();
-    if (!trimmed) {
+    const cleanText = sanitizeText(text, 100);
+    const cleanKeyword = sanitizeText(keyword, 15);
+
+    if (!cleanText) {
       setError('질문 문구를 입력해주세요.');
       return;
     }
 
-    let formattedText = trimmed;
+    let formattedText = cleanText;
     if (!formattedText.endsWith('?')) {
       formattedText += '?';
     }
 
     const newPrompt: PromptItem = {
-      id: `custom-${Date.now()}`,
+      id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       text: formattedText,
       category,
-      keyword: keyword.trim() || '직접 추가',
+      keyword: cleanKeyword || '직접 추가',
       isCustom: true,
     };
 

@@ -28,6 +28,7 @@ import { INITIAL_PROMPTS, CATEGORIES, CategoryId, PromptItem } from './data/prom
 import { playNextSound, playTickSound, playUnisonGoSound } from './utils/sound';
 import { AddCustomPromptModal } from './components/AddCustomPromptModal';
 import { HistoryModal } from './components/HistoryModal';
+import { secureStorage } from './utils/security';
 
 const STORAGE_CUSTOM_KEY = 'character_unison_custom_prompts';
 const STORAGE_BOOKMARKS_KEY = 'character_unison_bookmarks';
@@ -35,13 +36,12 @@ const STORAGE_SOUND_KEY = 'character_unison_sound_enabled';
 const STORAGE_THEME_KEY = 'character_unison_theme';
 
 export default function App() {
-  // --- Persistent State ---
+  // --- Persistent State (Encrypted & Tamper-Protected Storage) ---
   const [prompts, setPrompts] = useState<PromptItem[]>(() => {
     if (typeof window === 'undefined') return INITIAL_PROMPTS;
     try {
-      const saved = localStorage.getItem(STORAGE_CUSTOM_KEY);
-      if (saved) {
-        const customItems: PromptItem[] = JSON.parse(saved);
+      const customItems = secureStorage.getItem<PromptItem[]>(STORAGE_CUSTOM_KEY, []);
+      if (Array.isArray(customItems) && customItems.length > 0) {
         return [...customItems, ...INITIAL_PROMPTS];
       }
     } catch {
@@ -52,23 +52,17 @@ export default function App() {
 
   const [bookmarks, setBookmarks] = useState<string[]>(() => {
     if (typeof window === 'undefined') return [];
-    try {
-      const saved = localStorage.getItem(STORAGE_BOOKMARKS_KEY);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
+    return secureStorage.getItem<string[]>(STORAGE_BOOKMARKS_KEY, []);
   });
 
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
     if (typeof window === 'undefined') return true;
-    const saved = localStorage.getItem(STORAGE_SOUND_KEY);
-    return saved !== null ? saved === 'true' : true;
+    return secureStorage.getItem<boolean>(STORAGE_SOUND_KEY, true);
   });
 
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
-    const saved = localStorage.getItem(STORAGE_THEME_KEY);
+    const saved = secureStorage.getItem<string>(STORAGE_THEME_KEY, '');
     if (saved) return saved === 'dark';
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
@@ -94,21 +88,21 @@ export default function App() {
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
-      localStorage.setItem(STORAGE_THEME_KEY, 'dark');
+      secureStorage.setItem(STORAGE_THEME_KEY, 'dark');
     } else {
       document.documentElement.classList.remove('dark');
-      localStorage.setItem(STORAGE_THEME_KEY, 'light');
+      secureStorage.setItem(STORAGE_THEME_KEY, 'light');
     }
   }, [isDarkMode]);
 
-  // Persist sound preference
+  // Persist sound preference with cipher protection
   useEffect(() => {
-    localStorage.setItem(STORAGE_SOUND_KEY, String(soundEnabled));
+    secureStorage.setItem(STORAGE_SOUND_KEY, soundEnabled);
   }, [soundEnabled]);
 
-  // Persist bookmarks
+  // Persist bookmarks with cipher protection
   useEffect(() => {
-    localStorage.setItem(STORAGE_BOOKMARKS_KEY, JSON.stringify(bookmarks));
+    secureStorage.setItem(STORAGE_BOOKMARKS_KEY, bookmarks);
   }, [bookmarks]);
 
   // Filtered prompt list based on selected category
@@ -299,7 +293,7 @@ export default function App() {
     const updated = [newPrompt, ...prompts];
     setPrompts(updated);
     const customOnly = updated.filter((p) => p.isCustom);
-    localStorage.setItem(STORAGE_CUSTOM_KEY, JSON.stringify(customOnly));
+    secureStorage.setItem(STORAGE_CUSTOM_KEY, customOnly);
     // Select the newly added prompt
     setActiveCategory('all');
     setCurrentIndex(0);
